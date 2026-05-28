@@ -8,6 +8,7 @@ import { PayButton } from "@/components/PayButton";
 import { FollowButton } from "@/components/FollowButton";
 import { TipForm } from "@/components/TipForm";
 import { CustomRequestForm } from "@/components/CustomRequestForm";
+import { DemoBadge } from "@/components/editorial/DemoBadge";
 
 type Props = { params: Promise<{ handle: string }> };
 
@@ -32,6 +33,8 @@ export default async function CreatorProfilePage({ params }: Props) {
 
   const live = creator.liveSessions[0];
   const displayName = creator.user.displayName;
+  const followerCount =
+    creator.displayFollowerCount ?? creator._count.follows;
 
   let messageHref = `/messages?creator=${creator.id}`;
   if (session) {
@@ -78,9 +81,12 @@ export default async function CreatorProfilePage({ params }: Props) {
                   @{creator.handle}
                 </h1>
                 <p className="text-[var(--text-secondary)]">{displayName}</p>
-                <p className="mt-1 text-sm text-[var(--muted)]">
-                  {creator._count.follows} followers
-                </p>
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  {creator.isDemo && <DemoBadge />}
+                  <p className="text-sm text-[var(--muted)]">
+                    {followerCount.toLocaleString()} followers
+                  </p>
+                </div>
               </div>
             </div>
             {session && (

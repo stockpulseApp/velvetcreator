@@ -4,6 +4,7 @@ import { AppContainer } from "@/components/layout/AppContainer";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { formatMoney } from "@creator/shared";
 import { TagFilter } from "@/components/explore/TagFilter";
+import { allFetishTags } from "@/lib/fetishes";
 
 type Props = { searchParams: Promise<{ tag?: string }> };
 
@@ -11,11 +12,16 @@ export default async function ExplorePage({ searchParams }: Props) {
   const { tag } = await searchParams;
   const now = new Date();
 
-  const allTags = await prisma.creatorTag.findMany({
+  const dbTags = await prisma.creatorTag.findMany({
     distinct: ["tag"],
     select: { tag: true },
     take: 24,
   });
+  const catalogTags = allFetishTags().slice(0, 32);
+  const allTags = [...new Set([...dbTags.map((t) => t.tag), ...catalogTags])].slice(
+    0,
+    40
+  );
 
   const promoted = await prisma.promotion.findMany({
     where: { active: true, startsAt: { lte: now }, endsAt: { gte: now } },
@@ -51,7 +57,12 @@ export default async function ExplorePage({ searchParams }: Props) {
         subtitle="Browse by fetish tag. Subscribe, tip, or request something made just for you."
       />
 
-      <TagFilter tags={allTags.map((t) => t.tag)} active={tag} />
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <TagFilter tags={allTags} active={tag} />
+        <Link href="/fetishes" className="btn btn-ghost btn-sm shrink-0">
+          Full fetish list →
+        </Link>
+      </div>
 
       {promoted.length > 0 && (
         <section className="mb-12">
@@ -94,12 +105,16 @@ function CreatorTile({
     headline: string | null;
     bio: string | null;
     isLive: boolean;
+    isDemo?: boolean;
+    displayFollowerCount?: number | null;
     tags: { tag: string }[];
     subscriptionTiers: { priceCents: number }[];
     _count?: { follows: number };
   };
   featured?: boolean;
 }) {
+  const fans =
+    creator.displayFollowerCount ?? creator._count?.follows ?? 0;
   return (
     <Link
       href={`/u/${creator.handle}`}
@@ -120,11 +135,10 @@ function CreatorTile({
           <p className="font-display text-xl font-medium group-hover:text-[var(--accent-bright)]">
             @{creator.handle}
           </p>
-          {creator._count && (
-            <span className="text-xs text-[var(--muted)]">
-              {creator._count.follows} fans
-            </span>
-          )}
+          <span className="text-xs text-[var(--muted)]">
+            {fans.toLocaleString()} fans
+            {creator.isDemo ? " · preview" : ""}
+          </span>
         </div>
         <p className="mt-1 line-clamp-2 text-sm text-[var(--muted)]">
           {creator.headline || creator.bio}

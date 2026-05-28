@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { createHash } from "crypto";
+import { seedCommunity } from "./seed-community";
 
 function simpleHash(password: string): string {
   return createHash("sha256")
@@ -19,6 +20,7 @@ async function main() {
       role: "admin",
       passwordHash: simpleHash("admin123"),
       ageVerifiedAt: new Date(),
+      ageVerificationStatus: "verified",
     },
   });
 
@@ -31,6 +33,7 @@ async function main() {
       role: "creator",
       passwordHash: simpleHash("creator123"),
       ageVerifiedAt: new Date(),
+      ageVerificationStatus: "verified",
       referralCode: "DEMOCREATOR",
     },
   });
@@ -44,12 +47,16 @@ async function main() {
       role: "fan",
       passwordHash: simpleHash("fan123"),
       ageVerifiedAt: new Date(),
+      ageVerificationStatus: "verified",
     },
   });
 
   const profile = await prisma.creatorProfile.upsert({
     where: { userId: creatorUser.id },
-    update: {},
+    update: {
+      isDemo: false,
+      displayFollowerCount: 1200,
+    },
     create: {
       userId: creatorUser.id,
       handle: "democreator",
@@ -157,11 +164,14 @@ async function main() {
     });
   }
 
+  await seedCommunity(prisma);
+
   console.log("Seed complete:");
   console.log("  admin@platform.local / admin123");
   console.log("  creator@platform.local / creator123");
   console.log("  fan@platform.local / fan123");
   console.log("  Creator handle: @democreator");
+  console.log("  Preview community: *@preview.velvetcreator.local / preview123");
 }
 
 main()

@@ -27,6 +27,9 @@ export function SiteHeader({ session }: Props) {
           <Link href="/explore" className="btn btn-ghost btn-sm">
             Discover
           </Link>
+          <Link href="/fetishes" className="btn btn-ghost btn-sm">
+            Fetishes
+          </Link>
           <Link href="/for-creators" className="btn btn-ghost btn-sm">
             For creators
           </Link>

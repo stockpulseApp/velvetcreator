@@ -96,15 +96,34 @@ enum CreatorApplicationStatus {
   rejected
 }
 
+enum AgeVerificationStatus {
+  none
+  pending
+  processing
+  verified
+  rejected
+}
+
+enum AgeVerificationProvider {
+  mock_auto
+  veriff
+  yoti
+}
+
 model User {
   id                String    @id @default(cuid())
   email             String    @unique
   passwordHash      String?
   displayName       String
   role              UserRole  @default(fan)
-  ageVerifiedAt     DateTime?
-  dateOfBirth       DateTime?
-  bannedAt          DateTime?
+  ageVerifiedAt           DateTime?
+  dateOfBirth             DateTime?
+  ageVerificationStatus   AgeVerificationStatus @default(none)
+  ageVerificationProvider AgeVerificationProvider?
+  ageVerificationId       String?
+  ageVerificationMeta     Json?
+  isDemo                  Boolean               @default(false)
+  bannedAt                DateTime?
   fanPlatformPlusAt DateTime?
   referralCode      String?   @unique
   referredByUserId  String?
@@ -152,6 +171,9 @@ model CreatorProfile {
   promoEndsAt     DateTime?
   creatorProAt    DateTime?
   approvedAt      DateTime?
+  isDemo                Boolean   @default(false)
+  displayFollowerCount  Int?
+  memberSince           DateTime  @default(now())
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 

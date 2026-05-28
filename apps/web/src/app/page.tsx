@@ -5,15 +5,21 @@ import { CreatorShowcase } from "@/components/marketing/CreatorShowcase";
 
 async function getPublicStats() {
   try {
-    const [creators, fans, transactions] = await Promise.all([
+    const [creators, members, transactions, follows] = await Promise.all([
       prisma.creatorProfile.count({ where: { approvedAt: { not: null } } }),
-      prisma.user.count({ where: { role: "fan" } }),
+      prisma.user.count(),
       prisma.transaction.count({ where: { status: "completed" } }),
+      prisma.follow.count(),
     ]);
-    return { creators, fans, transactions };
+    return { creators, members, transactions, follows };
   } catch {
-    return { creators: 0, fans: 0, transactions: 0 };
+    return { creators: 0, members: 0, transactions: 0, follows: 0 };
   }
+}
+
+function formatStat(n: number) {
+  if (n >= 10_000) return `${(n / 1000).toFixed(1)}k`;
+  return n.toLocaleString();
 }
 
 export default async function HomePage() {
@@ -46,14 +52,23 @@ export default async function HomePage() {
               <Link href="/explore" className="btn btn-secondary min-w-[200px]">
                 Explore creators
               </Link>
+              <Link href="/fetishes" className="btn btn-ghost min-w-[200px]">
+                Browse fetish catalog
+              </Link>
             </div>
           </div>
 
           <div className="mt-16 grid grid-cols-3 gap-4 md:mt-24 md:gap-8">
             {[
-              { label: "Verified creators", value: stats.creators || "—" },
-              { label: "Community members", value: stats.fans + stats.creators || "—" },
-              { label: "Transactions settled", value: stats.transactions || "—" },
+              { label: "Verified creators", value: formatStat(stats.creators) },
+              {
+                label: "Community members",
+                value: formatStat(stats.members),
+              },
+              {
+                label: "Creator follows",
+                value: formatStat(stats.follows),
+              },
             ].map((stat) => (
               <div key={stat.label} className="card-glass text-center">
                 <p className="font-display text-3xl font-semibold text-[var(--accent-bright)] md:text-4xl">

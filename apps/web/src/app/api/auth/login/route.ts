@@ -33,7 +33,8 @@ export async function POST(request: Request) {
     userId: user.id,
     email: user.email,
     role: user.role,
-    ageVerified: !!user.ageVerifiedAt,
+    ageVerified:
+      user.ageVerificationStatus === "verified" || !!user.ageVerifiedAt,
   });
 
   return NextResponse.json({ ok: true, role: user.role });
