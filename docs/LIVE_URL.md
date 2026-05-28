@@ -2,7 +2,12 @@
 
 ## Production (Vercel)
 
-**URL:** https://creator-platform-eight-pi.vercel.app
+**URLs:**
+
+| URL | Status |
+|-----|--------|
+| https://creator-platform-eight-pi.vercel.app | Live (Vercel default) |
+| https://velvetcreator.wealthybrainiac.com | Added to Vercel — **finish DNS** in [DNS_SETUP.md](./DNS_SETUP.md) |
 
 **GitHub:** https://github.com/stockpulseApp/velvetcreator
 
@@ -35,9 +40,11 @@
 | Creator studio | `/studio` (creator login) |
 | Admin | `/admin` (admin login) |
 
-### Database (Neon)
+### Database (Neon) — action required
 
-Production uses Neon Postgres. Claim before expiry if you have `PUBLIC_POSTGRES_CLAIM_URL` in local `.env.production` (not committed).
+**Claim before 31 May 2026:** https://neon.new/claim/e8074136-b0c3-41e6-82f8-d4b57a96b16a
+
+(Sign in with Google/GitHub in the browser — we cannot claim without your Neon account.)
 
 Re-seed production:
 

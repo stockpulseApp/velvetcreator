@@ -28,6 +28,7 @@ const PUBLIC_PATHS = [
   "/safety",
   "/fetishes",
   "/verify-age",
+  "/creator-agreement",
   "/api/auth",
   "/api/webhooks",
   "/api/kyc",

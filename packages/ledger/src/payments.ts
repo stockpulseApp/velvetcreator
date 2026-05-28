@@ -43,10 +43,44 @@ export class MockPaymentProvider implements PaymentProvider {
   }
 }
 
+export class ProcessorNotConfiguredError extends Error {
+  constructor(processor: string) {
+    super(
+      `${processor} is selected (PAYMENTS_MODE) but API credentials are missing. ` +
+        `Set processor env vars or use PAYMENTS_MODE=mock for demo. See docs/PAYMENTS.md.`
+    );
+    this.name = "ProcessorNotConfiguredError";
+  }
+}
+
+/** Placeholder until CCBill REST credentials are wired — see docs/PAYMENTS.md */
+export class CcbillPaymentProvider implements PaymentProvider {
+  async createPayment(input: PaymentIntentInput): Promise<PaymentIntentResult> {
+    if (!process.env.CCBILL_CLIENT_ACCOUNT || !process.env.CCBILL_SUBACCOUNT) {
+      throw new ProcessorNotConfiguredError("CCBill");
+    }
+    const fees = calculateFees(input);
+    return {
+      provider: "ccbill",
+      externalId: `ccbill_pending_${Date.now()}`,
+      checkoutUrl: process.env.CCBILL_FLEXFORM_URL ?? null,
+      status: "pending",
+      fees,
+    };
+  }
+
+  async verifyWebhook(): Promise<null> {
+    return null;
+  }
+}
+
 export function getPaymentProvider(): PaymentProvider {
   const mode = process.env.PAYMENTS_MODE ?? "mock";
   if (mode === "mock") return new MockPaymentProvider();
-  // Production: swap for CCBill/Segpay adapter
+  if (mode === "ccbill") return new CcbillPaymentProvider();
+  if (mode === "segpay") {
+    throw new ProcessorNotConfiguredError("Segpay");
+  }
   return new MockPaymentProvider();
 }
 

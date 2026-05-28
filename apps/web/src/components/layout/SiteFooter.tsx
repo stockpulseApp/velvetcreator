@@ -15,6 +15,7 @@ const links = {
   Legal: [
     { href: "/terms", label: "Terms" },
     { href: "/privacy", label: "Privacy" },
+    { href: "/creator-agreement", label: "Creator agreement" },
   ],
 };
 
