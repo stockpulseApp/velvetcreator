@@ -1,0 +1,22 @@
+{
+  "name": "VelvetCreator",
+  "short_name": "VelvetCreator",
+  "description": "Fetish-native creator platform — subscriptions, live, shop, and custom requests",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#060608",
+  "theme_color": "#060608",
+  "icons": [
+    {
+      "src": "/icon",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "/apple-icon",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

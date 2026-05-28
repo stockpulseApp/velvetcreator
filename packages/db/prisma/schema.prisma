@@ -1,0 +1,510 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  fan
+  creator
+  agency
+  admin
+}
+
+enum TransactionType {
+  tip
+  ppv
+  subscription
+  live
+  custom_request
+  shop
+  paid_dm
+  platform_plan
+  listing_fee
+  payout
+  instant_payout_fee
+}
+
+enum TransactionStatus {
+  pending
+  completed
+  failed
+  refunded
+  disputed
+}
+
+enum LedgerAccount {
+  creator_pending
+  creator_available
+  creator_escrow
+  platform_revenue
+  escrow_hold
+  fan_wallet
+}
+
+enum PostVisibility {
+  public
+  subscribers
+  ppv
+}
+
+enum CustomRequestStatus {
+  draft
+  paid
+  accepted
+  in_session
+  completed
+  disputed
+  refunded
+  cancelled
+}
+
+enum OrderStatus {
+  paid
+  processing
+  shipped
+  delivered
+  cancelled
+  refunded
+}
+
+enum FanSubscriptionStatus {
+  active
+  cancelled
+  past_due
+  expired
+}
+
+enum LiveSessionStatus {
+  scheduled
+  live
+  ended
+}
+
+enum ReportStatus {
+  open
+  reviewed
+  actioned
+}
+
+enum CreatorApplicationStatus {
+  pending
+  approved
+  rejected
+}
+
+model User {
+  id                String    @id @default(cuid())
+  email             String    @unique
+  passwordHash      String?
+  displayName       String
+  role              UserRole  @default(fan)
+  ageVerifiedAt     DateTime?
+  dateOfBirth       DateTime?
+  bannedAt          DateTime?
+  fanPlatformPlusAt DateTime?
+  referralCode      String?   @unique
+  referredByUserId  String?
+  referredBy        User?     @relation("Referrals", fields: [referredByUserId], references: [id])
+  referrals         User[]    @relation("Referrals")
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  creatorProfile     CreatorProfile?
+  agencyMemberships  AgencyCreator[]
+  posts              Post[]              @relation("PostAuthor")
+  likes              Like[]
+  follows            Follow[]            @relation("Follower")
+  fanSubscriptions   FanSubscription[]
+  tipsSent           Transaction[]       @relation("Payer")
+  conversationsAsFan Conversation[]      @relation("FanConversations")
+  messagesSent       Message[]
+  reportsFiled       Report[]
+  platformPlans      UserPlatformPlan[]
+  creatorApplication CreatorApplication?
+}
+
+model CreatorApplication {
+  id        String                   @id @default(cuid())
+  userId    String                   @unique
+  user      User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status    CreatorApplicationStatus @default(pending)
+  bio       String?
+  legalName String?
+  reviewedAt DateTime?
+  createdAt DateTime                 @default(now())
+}
+
+model CreatorProfile {
+  id              String    @id @default(cuid())
+  userId          String    @unique
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  handle          String    @unique
+  headline        String?
+  bio             String?
+  bannerUrl       String?
+  avatarUrl       String?
+  tipMinimumCents Int       @default(500)
+  isLive          Boolean   @default(false)
+  promoEndsAt     DateTime?
+  creatorProAt    DateTime?
+  approvedAt      DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  tags               CreatorTag[]
+  posts              Post[]
+  subscriptionTiers  SubscriptionTier[]
+  fanSubscriptions   FanSubscription[]
+  transactions       Transaction[]       @relation("PayeeCreator")
+  listings           Listing[]
+  orders             Order[]
+  customRequests     CustomRequest[]
+  liveSessions       LiveSession[]
+  promotions         Promotion[]
+  ledgerEntries      LedgerEntry[]
+  payouts            Payout[]
+  follows            Follow[]
+  conversations      Conversation[]
+  agencyLinks        AgencyCreator[]
+}
+
+model CreatorTag {
+  id               String         @id @default(cuid())
+  creatorProfileId String
+  creator          CreatorProfile @relation(fields: [creatorProfileId], references: [id], onDelete: Cascade)
+  tag              String
+
+  @@unique([creatorProfileId, tag])
+  @@index([tag])
+}
+
+model Agency {
+  id        String          @id @default(cuid())
+  name      String
+  ownerId   String
+  createdAt DateTime        @default(now())
+  creators  AgencyCreator[]
+}
+
+model AgencyCreator {
+  id               String         @id @default(cuid())
+  agencyId         String
+  agency           Agency         @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  userId           String
+  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  creatorProfileId String
+  creator          CreatorProfile @relation(fields: [creatorProfileId], references: [id], onDelete: Cascade)
+  splitBps         Int            @default(0)
+
+  @@unique([agencyId, creatorProfileId])
+}
+
+model Post {
+  id               String         @id @default(cuid())
+  authorId         String
+  author           User           @relation("PostAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  creatorProfileId String
+  creator          CreatorProfile @relation(fields: [creatorProfileId], references: [id], onDelete: Cascade)
+  body             String?
+  mediaUrls        Json?
+  visibility       PostVisibility @default(public)
+  ppvPriceCents    Int?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  likes Like[]
+
+  @@index([creatorProfileId, createdAt])
+}
+
+model Follow {
+  id               String         @id @default(cuid())
+  followerId       String
+  follower         User           @relation("Follower", fields: [followerId], references: [id], onDelete: Cascade)
+  creatorProfileId String
+  creator          CreatorProfile @relation(fields: [creatorProfileId], references: [id], onDelete: Cascade)
+  createdAt        DateTime       @default(now())
+
+  @@unique([followerId, creatorProfileId])
+}
+
+model Like {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, postId])
+}
+
+model SubscriptionTier {
+  id               String         @id @default(cuid())
+  creatorProfileId String
+  creator          CreatorProfile @relation(fields: [creatorProfileId], references: [id], onDelete: Cascade)
+  name             String
+  priceCents       Int
+  sortOrder        Int            @default(0)
+  perks            Json
+  active           Boolean        @default(true)
+  createdAt        DateTime       @default(now())
+
+  fanSubscriptions FanSubscription[]
+}
+
+model FanSubscription {
+  id                      String                @id @default(cuid())
+  fanId                   String
+  fan                     User                  @relation(fields: [fanId], references: [id], onDelete: Cascade)
+  tierId                  String
+  tier                    SubscriptionTier      @relation(fields: [tierId], references: [id], onDelete: Cascade)
+  creatorProfileId        String
+  creator                 CreatorProfile        @relation(fields: [creatorProfileId], references: [id], onDelete: Cascade)
+  status                  FanSubscriptionStatus @default(active)
+  currentPeriodEnd        DateTime
+  processorSubscriptionId String?
+  createdAt               DateTime              @default(now())
+  updatedAt               DateTime              @updatedAt
+
+  @@unique([fanId, creatorProfileId])
+  @@index([fanId, status])
+}
+
+model Transaction {
+  id                 String            @id @default(cuid())
+  type               TransactionType
+  status             TransactionStatus @default(pending)
+  grossCents         Int
+  platformFeeCents   Int               @default(0)
+  processorFeeCents  Int               @default(0)
+  creatorNetCents    Int               @default(0)
+  escrowFeeCents     Int               @default(0)
+  payerId            String?
+  payer              User?             @relation("Payer", fields: [payerId], references: [id])
+  payeeCreatorId     String?
+  payeeCreator       CreatorProfile?   @relation("PayeeCreator", fields: [payeeCreatorId], references: [id])
+  externalId         String?
+  metadata           Json?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  ledgerEntries LedgerEntry[]
+  dispute       Dispute?
+
+  @@index([payeeCreatorId, type, createdAt])
+  @@index([externalId])
+}
+
+model LedgerEntry {
+  id               String         @id @default(cuid())
+  transactionId    String?
+  transaction      Transaction?   @relation(fields: [transactionId], references: [id])
+  creatorProfileId String?
+  creator          CreatorProfile? @relation(fields: [creatorProfileId], references: [id])
+  account          LedgerAccount
+  amountCents      Int
+  direction        String
+  note             String?
+  createdAt        DateTime       @default(now())
+
+  @@index([creatorProfileId, account])
+}
+
+model Payout {
+  id               String         @id @default(cuid())
+  creatorProfileId String
+  creator          CreatorProfile @relation(fields: [creatorProfileId], references: [id], onDelete: Cascade)
+  amountCents      Int
+  feeCents         Int            @default(0)
+  status           String         @default("pending")
+  createdAt        DateTime       @default(now())
+}
+
+model Conversation {
+  id               String         @id @default(cuid())
+  fanId            String
+  fan              User           @relation("FanConversations", fields: [fanId], references: [id], onDelete: Cascade)
+  creatorProfileId String
+  creator          CreatorProfile @relation(fields: [creatorProfileId], references: [id], onDelete: Cascade)
+  unlockPriceCents Int?
+  unlockedAt       DateTime?
+  subscribersOnly  Boolean        @default(false)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  messages Message[]
+
+  @@unique([fanId, creatorProfileId])
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String
+  sender         User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  body           String
+  isPaid         Boolean      @default(false)
+  paidCents      Int?
+  createdAt      DateTime     @default(now())
+
+  @@index([conversationId, createdAt])
+}
+
+model CustomRequest {
+  id               String              @id @default(cuid())
+  fanId            String
+  creatorProfileId String
+  creator          CreatorProfile      @relation(fields: [creatorProfileId], references: [id], onDelete: Cascade)
+  title            String
+  description      String
+  priceCents       Int
+  status           CustomRequestStatus @default(draft)
+  deadlineAt       DateTime?
+  transactionId    String?
+  liveSessionId    String?
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+
+  @@index([creatorProfileId, status])
+}
+
+model LiveSession {
+  id               String            @id @default(cuid())
+  creatorProfileId String
+  creator          CreatorProfile    @relation(fields: [creatorProfileId], references: [id], onDelete: Cascade)
+  title            String
+  roomName         String            @unique
+  ticketPriceCents Int               @default(0)
+  status           LiveSessionStatus @default(scheduled)
+  isPrivate        Boolean           @default(false)
+  startedAt        DateTime?
+  endedAt          DateTime?
+  createdAt        DateTime          @default(now())
+}
+
+model Listing {
+  id               String         @id @default(cuid())
+  creatorProfileId String
+  creator          CreatorProfile @relation(fields: [creatorProfileId], references: [id], onDelete: Cascade)
+  title            String
+  description      String
+  priceCents       Int
+  quantity         Int            @default(1)
+  imageUrls        Json?
+  active           Boolean        @default(true)
+  shippingNotes    String?
+  createdAt        DateTime       @default(now())
+
+  orders Order[]
+}
+
+model Order {
+  id               String      @id @default(cuid())
+  listingId        String
+  listing          Listing     @relation(fields: [listingId], references: [id])
+  buyerId          String
+  creatorProfileId String
+  creator          CreatorProfile @relation(fields: [creatorProfileId], references: [id], onDelete: Cascade)
+  quantity         Int         @default(1)
+  totalCents       Int
+  status           OrderStatus @default(paid)
+  shippingLine1    String?
+  shippingCity     String?
+  shippingCountry  String?
+  trackingNumber   String?
+  transactionId    String?
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+}
+
+model PlatformPlan {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  priceCents  Int
+  interval    String   @default("month")
+  perks       Json
+  active      Boolean  @default(true)
+
+  subscribers UserPlatformPlan[]
+}
+
+model UserPlatformPlan {
+  id        String       @id @default(cuid())
+  userId    String
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  planId    String
+  plan      PlatformPlan @relation(fields: [planId], references: [id])
+  status    String       @default("active")
+  expiresAt DateTime?
+  createdAt DateTime     @default(now())
+
+  @@unique([userId, planId])
+}
+
+model Promotion {
+  id               String         @id @default(cuid())
+  creatorProfileId String
+  creator          CreatorProfile @relation(fields: [creatorProfileId], references: [id], onDelete: Cascade)
+  tag              String?
+  dailyBudgetCents Int
+  startsAt         DateTime
+  endsAt           DateTime
+  active           Boolean        @default(true)
+}
+
+model ReferralAttribution {
+  id                  String   @id @default(cuid())
+  code                String   @unique
+  referrerUserId      String
+  referredUserId      String   @unique
+  commissionShareBps  Int      @default(500)
+  expiresAt           DateTime
+  createdAt           DateTime @default(now())
+}
+
+model Report {
+  id         String       @id @default(cuid())
+  reporterId String
+  reporter   User         @relation(fields: [reporterId], references: [id])
+  targetType String
+  targetId   String
+  reason     String
+  status     ReportStatus @default(open)
+  createdAt  DateTime     @default(now())
+}
+
+model Dispute {
+  id            String      @id @default(cuid())
+  transactionId String      @unique
+  transaction   Transaction @relation(fields: [transactionId], references: [id])
+  reason        String
+  status        String      @default("open")
+  resolution    String?
+  createdAt     DateTime    @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String?
+  action    String
+  target    String?
+  meta      Json?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+model WaitlistEntry {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  role      String   @default("fan")
+  source    String?
+  createdAt DateTime @default(now())
+}

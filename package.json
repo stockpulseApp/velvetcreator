@@ -1,0 +1,21 @@
+{
+  "name": "creator-platform",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w @creator/web",
+    "build": "npm run build -w @creator/web",
+    "start": "npm run start -w @creator/web",
+    "postinstall": "npm run db:generate",
+    "db:generate": "npm run generate -w @creator/db",
+    "db:push": "npm run push -w @creator/db",
+    "db:seed": "npm run seed -w @creator/db",
+    "db:studio": "npm run studio -w @creator/db",
+    "db:deploy": "npm run push -w @creator/db",
+    "lint": "npm run lint -w @creator/web",
+    "seed:production": "node scripts/post-deploy-seed.mjs"
+  }
+}

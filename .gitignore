@@ -1,0 +1,10 @@
+node_modules
+.next
+dist
+.env
+.env.local
+.uploads
+*.db
+packages/db/dev.db
+packages/db/prisma/dev.db
+.DS_Store
