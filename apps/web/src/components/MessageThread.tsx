@@ -8,14 +8,12 @@ type Msg = { id: string; body: string; senderId: string; createdAt: string };
 
 export function MessageThread({
   conversationId,
-  creatorProfileId,
   currentUserId,
   unlockPriceCents,
   unlocked,
   initialMessages,
 }: {
   conversationId: string;
-  creatorProfileId: string;
   currentUserId: string;
   unlockPriceCents: number | null;
   unlocked: boolean;

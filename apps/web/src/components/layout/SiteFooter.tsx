@@ -3,6 +3,7 @@ import Link from "next/link";
 const links = {
   Product: [
     { href: "/explore", label: "Discover" },
+    { href: "/fetishes", label: "Fetish catalog" },
     { href: "/for-creators", label: "For creators" },
     { href: "/signup?role=creator", label: "Start earning" },
   ],

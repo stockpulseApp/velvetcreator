@@ -8,7 +8,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const { action, userId, creatorProfileId, reportId } = await request.json();
+  const { action, userId, reportId } = await request.json();
 
   if (action === "approve_creator" && userId) {
     await prisma.creatorApplication.update({

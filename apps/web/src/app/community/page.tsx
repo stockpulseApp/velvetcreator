@@ -11,6 +11,12 @@ export default function CommunityPage() {
           VelvetCreator exists for consensual adult expression between adults. These
           rules protect creators, fans, and the community we are building.
         </p>
+        <p className="mt-6">
+          <a href="/fetishes" className="text-[var(--accent-bright)] underline">
+            Browse the full fetish catalog
+          </a>{" "}
+          to see supported niches and tags.
+        </p>
         <ul className="mt-8 space-y-4">
           {[
             "All participants must be 18+ and verified before NSFW access or payments.",

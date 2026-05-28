@@ -27,7 +27,12 @@ function LoginForm() {
       setError(data.error || "Login failed");
       return;
     }
-    router.push(params.get("next") || "/feed");
+    const next = params.get("next");
+    if (!data.ageVerified) {
+      router.push("/verify-age");
+    } else {
+      router.push(next || "/feed");
+    }
     router.refresh();
   }
 

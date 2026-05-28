@@ -37,5 +37,8 @@ export async function POST(request: Request) {
       user.ageVerificationStatus === "verified" || !!user.ageVerifiedAt,
   });
 
-  return NextResponse.json({ ok: true, role: user.role });
+  const ageVerified =
+    user.ageVerificationStatus === "verified" || !!user.ageVerifiedAt;
+
+  return NextResponse.json({ ok: true, role: user.role, ageVerified });
 }

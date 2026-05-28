@@ -124,7 +124,6 @@ export default async function MessagesPage({ searchParams }: Props) {
               </p>
               <MessageThread
                 conversationId={active.id}
-                creatorProfileId={active.creatorProfileId}
                 currentUserId={userId}
                 unlockPriceCents={active.unlockPriceCents}
                 unlocked={

@@ -49,6 +49,12 @@ Open http://localhost:3000
 
 Creator handle: `@democreator`
 
+Preview creators: `*@preview.velvetcreator.local` / `preview123` (see [/explore](https://creator-platform-eight-pi.vercel.app/explore))
+
+## Live site
+
+**https://creator-platform-eight-pi.vercel.app** — auto-deploys from `master`. See [docs/LIVE_URL.md](docs/LIVE_URL.md).
+
 ## Payments
 
 Development uses **mock payments** (`PAYMENTS_MODE=mock`). All pay endpoints settle immediately and write to the unified `Transaction` + `LedgerEntry` tables.
@@ -59,7 +65,8 @@ Production: integrate CCBill/Segpay per [docs/PAYMENTS.md](docs/PAYMENTS.md).
 
 - Landing page with waitlist (`/api/waitlist`) — export signups from **Admin → Launch waitlist**
 - Public creator profiles at `/u/[handle]` and **Discover** at `/explore` (SEO: `/sitemap.xml`, `/robots.txt`)
-- Marketing pages: `/for-creators`, `/community`, `/safety`, `/terms`, `/privacy`
+- Marketing pages: `/for-creators`, `/fetishes`, `/community`, `/safety`, `/terms`, `/privacy`
+- Automated 18+ verification at `/verify-age` (ID upload + DOB)
 - Set `NEXT_PUBLIC_APP_URL` to your production domain before deploy
 
 See [docs/LAUNCH_CHECKLIST.md](docs/LAUNCH_CHECKLIST.md) and [docs/DEPLOY.md](docs/DEPLOY.md).

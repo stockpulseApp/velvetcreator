@@ -39,7 +39,7 @@ export default async function ExplorePage({ searchParams }: Props) {
       subscriptionTiers: { where: { active: true }, orderBy: { priceCents: "asc" }, take: 1 },
       _count: { select: { follows: true } },
     },
-    orderBy: { createdAt: "desc" },
+    orderBy: [{ displayFollowerCount: "desc" }, { createdAt: "desc" }],
     take: 48,
   });
 

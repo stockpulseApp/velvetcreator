@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond, Outfit } from "next/font/google";
 import { SiteHeader } from "@/components/layout/SiteHeader";
+import { DemoModeBanner } from "@/components/layout/DemoModeBanner";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { MobileNav } from "@/components/layout/MobileNav";
 import { getSession } from "@/lib/session";
@@ -59,6 +60,7 @@ export default async function RootLayout({
         <link rel="manifest" href="/manifest.json" />
       </head>
       <body className="bg-mesh grain min-h-screen">
+        <DemoModeBanner />
         <SiteHeader session={session} />
         <div className={session ? "has-bottom-nav" : ""}>{children}</div>
         <SiteFooter />

@@ -8,6 +8,8 @@
 
 **Vercel project:** `stock-pulse1/creator-platform` (auto-deploys on push to `master`)
 
+**CI:** https://github.com/stockpulseApp/velvetcreator/actions
+
 ### Demo accounts (seeded in production DB)
 
 | Role | Email | Password |
@@ -16,18 +18,43 @@
 | Creator | creator@platform.local | creator123 |
 | Fan | fan@platform.local | fan123 |
 
-Public creator profile: https://creator-platform-eight-pi.vercel.app/u/democreator
+**Preview community** (labeled “Preview creator” on profiles):
+
+- Password for all: `preview123`
+- Example: `velvetsoles@preview.velvetcreator.local`, `mistressnova@preview.velvetcreator.local`
+- Full list: run `npm run db:seed` locally or browse [/explore](https://creator-platform-eight-pi.vercel.app/explore)
+
+### Key URLs
+
+| Page | Path |
+|------|------|
+| Discover | `/explore` |
+| Fetish catalog (100+ tags) | `/fetishes` |
+| Age verification | `/verify-age` |
+| Demo creator | `/u/democreator` |
+| Creator studio | `/studio` (creator login) |
+| Admin | `/admin` (admin login) |
 
 ### Database (Neon)
 
-Production uses a **claimable Neon** Postgres instance. Claim before **31 May 2026** so the database is not deleted:
+Production uses Neon Postgres. Claim before expiry if you have `PUBLIC_POSTGRES_CLAIM_URL` in local `.env.production` (not committed).
 
-See `PUBLIC_POSTGRES_CLAIM_URL` in local `.env.production` (not committed).
+Re-seed production:
+
+```bash
+npm run seed:production
+```
+
+### Environment (Vercel)
+
+Required: `DATABASE_URL`, `NEXTAUTH_SECRET`, `NEXT_PUBLIC_APP_URL`, `PAYMENTS_MODE=mock`
+
+Before real money: `VERIFF_*` or `YOTI_*`, adult processor keys — see [.env.example](../.env.example) and [PAYMENTS.md](./PAYMENTS.md).
 
 ### Custom domain (optional)
 
-In Vercel → Project → Settings → Domains, add e.g. `velvetcreator.com` and update `NEXT_PUBLIC_APP_URL`.
+Vercel → Project → Settings → Domains → add `velvetcreator.com` (or your domain) and set `NEXT_PUBLIC_APP_URL` to match.
 
 ## Alternative: Render
 
-One-click Blueprint (web + Postgres): [docs/RENDER_ONE_CLICK.md](./RENDER_ONE_CLICK.md)
+[RENDER_ONE_CLICK.md](./RENDER_ONE_CLICK.md)

@@ -44,9 +44,17 @@ export async function CreatorShowcase() {
                 )}
               </div>
               <div className="p-4">
-                <p className="font-display text-lg font-medium group-hover:text-[var(--accent-bright)]">
-                  @{c.handle}
-                </p>
+                <div className="flex items-start justify-between gap-2">
+                  <p className="font-display text-lg font-medium group-hover:text-[var(--accent-bright)]">
+                    @{c.handle}
+                  </p>
+                  <span className="text-xs text-[var(--muted)]">
+                    {(
+                      c.displayFollowerCount ?? c._count?.follows ?? 0
+                    ).toLocaleString()}{" "}
+                    fans
+                  </span>
+                </div>
                 <p className="mt-1 line-clamp-2 text-sm text-[var(--muted)]">
                   {c.headline || c.bio}
                 </p>
@@ -83,8 +91,9 @@ async function loadCreators() {
     include: {
       tags: true,
       subscriptionTiers: { where: { active: true }, orderBy: { priceCents: "asc" }, take: 1 },
+      _count: { select: { follows: true } },
     },
-    orderBy: { createdAt: "desc" },
+    orderBy: [{ displayFollowerCount: "desc" }, { createdAt: "desc" }],
     take: 8,
   });
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname } from "next/navigation";
 import type { UserRole } from "@creator/shared";
 
 const fanItems = [
@@ -11,7 +11,7 @@ const fanItems = [
   { href: "/wallet", label: "Wallet", icon: "◇" },
 ];
 
-function isActive(pathname: string, href: string, searchParams: URLSearchParams) {
+function isActive(pathname: string, href: string) {
   if (href === "/messages") {
     return pathname === "/messages" || pathname.startsWith("/messages/");
   }
@@ -20,7 +20,6 @@ function isActive(pathname: string, href: string, searchParams: URLSearchParams)
 
 export function MobileNav({ role }: { role: UserRole }) {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const items =
     role === "creator" || role === "admin"
       ? [...fanItems.slice(0, 3), { href: "/studio", label: "Studio", icon: "★" }]
@@ -30,7 +29,7 @@ export function MobileNav({ role }: { role: UserRole }) {
     <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-[var(--border)] bg-[var(--bg)]/95 backdrop-blur-xl md:hidden">
       <div className="flex items-stretch justify-around px-2 py-2">
         {items.map((item) => {
-          const active = isActive(pathname, item.href, searchParams);
+          const active = isActive(pathname, item.href);
           return (
             <Link
               key={item.href}
