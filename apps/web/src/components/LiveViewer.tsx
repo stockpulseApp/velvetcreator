@@ -13,18 +13,30 @@ type Props = {
   roomName: string;
   title: string;
   isHost?: boolean;
+  canJoin?: boolean;
 };
 
 type TokenState =
   | { status: "loading" }
+  | { status: "locked" }
   | { status: "preview" }
   | { status: "ready"; url: string; token: string }
   | { status: "error"; message: string };
 
-export function LiveViewer({ liveSessionId, roomName, title, isHost }: Props) {
+export function LiveViewer({
+  liveSessionId,
+  roomName,
+  title,
+  isHost,
+  canJoin = true,
+}: Props) {
   const [state, setState] = useState<TokenState>({ status: "loading" });
 
   useEffect(() => {
+    if (!canJoin && !isHost) {
+      setState({ status: "locked" });
+      return;
+    }
     let cancelled = false;
     (async () => {
       try {
@@ -35,6 +47,10 @@ export function LiveViewer({ liveSessionId, roomName, title, isHost }: Props) {
         });
         const data = await res.json();
         if (cancelled) return;
+        if (res.status === 402) {
+          setState({ status: "locked" });
+          return;
+        }
         if (!res.ok || !data.configured) {
           setState({ status: "preview" });
           return;
@@ -56,7 +72,17 @@ export function LiveViewer({ liveSessionId, roomName, title, isHost }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [liveSessionId]);
+  }, [liveSessionId, canJoin, isHost]);
+
+  if (state.status === "locked") {
+    return (
+      <div className="card flex aspect-video items-center justify-center text-center">
+        <p className="text-sm text-[var(--muted)]">
+          Ticket required — purchase above to enter the room.
+        </p>
+      </div>
+    );
+  }
 
   if (state.status === "loading") {
     return (

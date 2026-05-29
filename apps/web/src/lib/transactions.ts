@@ -73,6 +73,22 @@ export async function createAndSettlePayment(input: CreatePaymentInput) {
         direction: line.direction,
       })),
     });
+
+    if (input.type === "ppv" && input.metadata?.postId) {
+      await prisma.postUnlock.upsert({
+        where: {
+          userId_postId: {
+            userId: input.payerId,
+            postId: input.metadata.postId,
+          },
+        },
+        create: {
+          userId: input.payerId,
+          postId: input.metadata.postId,
+        },
+        update: {},
+      });
+    }
   }
 
   return { transaction: tx, payment };
@@ -97,18 +113,20 @@ export async function releaseCustomRequestEscrow(
 }
 
 export async function getCreatorBalance(creatorProfileId: string) {
-  const entries = await prisma.ledgerEntry.findMany({
+  const grouped = await prisma.ledgerEntry.groupBy({
+    by: ["account", "direction"],
     where: { creatorProfileId },
+    _sum: { amountCents: true },
   });
 
   let available = 0;
   let escrow = 0;
 
-  for (const e of entries) {
-    const sign = e.direction === "credit" ? 1 : -1;
-    const amt = e.amountCents * sign;
-    if (e.account === "creator_available") available += amt;
-    if (e.account === "escrow_hold") escrow += amt;
+  for (const row of grouped) {
+    const sign = row.direction === "credit" ? 1 : -1;
+    const amt = (row._sum.amountCents ?? 0) * sign;
+    if (row.account === "creator_available") available += amt;
+    if (row.account === "escrow_hold") escrow += amt;
   }
 
   return { availableCents: available, escrowCents: escrow };

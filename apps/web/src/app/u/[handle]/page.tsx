@@ -10,6 +10,9 @@ import { TipForm } from "@/components/TipForm";
 import { CustomRequestForm } from "@/components/CustomRequestForm";
 import { DemoBadge } from "@/components/editorial/DemoBadge";
 import { ReportButton } from "@/components/ReportButton";
+import { PostComments } from "@/components/PostComments";
+import { BlockButton } from "@/components/BlockButton";
+import { batchPostAccess } from "@/lib/access";
 
 type Props = { params: Promise<{ handle: string }> };
 
@@ -20,7 +23,7 @@ export default async function CreatorProfilePage({ params }: Props) {
   const creator = await prisma.creatorProfile.findUnique({
     where: { handle },
     include: {
-      user: { select: { displayName: true } },
+      user: { select: { displayName: true, id: true } },
       tags: true,
       subscriptionTiers: { where: { active: true }, orderBy: { sortOrder: "asc" } },
       listings: { where: { active: true }, take: 6 },
@@ -30,9 +33,14 @@ export default async function CreatorProfilePage({ params }: Props) {
     },
   });
 
-  if (!creator) notFound();
+  if (!creator || !creator.approvedAt) notFound();
 
   const live = creator.liveSessions[0];
+  const accessMap = await batchPostAccess(
+    session?.userId ?? null,
+    session?.ageVerified ?? false,
+    creator.posts
+  );
   const displayName = creator.user.displayName;
   const followerCount =
     creator.displayFollowerCount ?? creator._count.follows;
@@ -117,6 +125,9 @@ export default async function CreatorProfilePage({ params }: Props) {
                   targetType="creator"
                   targetId={creator.id}
                 />
+                {session.userId !== creator.user.id && (
+                  <BlockButton userId={creator.user.id} />
+                )}
               </div>
             )}
           </div>
@@ -146,34 +157,65 @@ export default async function CreatorProfilePage({ params }: Props) {
           <section>
             <h2 className="font-display text-2xl font-medium">Posts</h2>
             <div className="mt-4 space-y-4">
-              {creator.posts.map((post) => (
-                <article key={post.id} className="card">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <span className="badge badge-muted">{post.visibility}</span>
-                      <time className="text-xs text-[var(--muted)]">
-                        {new Date(post.createdAt).toLocaleDateString()}
-                      </time>
+              {creator.posts.map((post) => {
+                const access = accessMap.get(post.id) ?? {
+                  allowed: false,
+                  reason: "login",
+                };
+                return (
+                  <article key={post.id} className="card">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="badge badge-muted">{post.visibility}</span>
+                        <time className="text-xs text-[var(--muted)]">
+                          {new Date(post.createdAt).toLocaleDateString()}
+                        </time>
+                      </div>
+                      {session && (
+                        <ReportButton
+                          targetType="post"
+                          targetId={post.id}
+                          label="Report"
+                        />
+                      )}
                     </div>
-                    {session && (
-                      <ReportButton
-                        targetType="post"
-                        targetId={post.id}
-                        label="Report"
-                      />
+                    {access.allowed ? (
+                      <>
+                        <p className="mt-3 leading-relaxed">{post.body}</p>
+                        <PostComments
+                          postId={post.id}
+                          canComment={!!session?.ageVerified}
+                        />
+                      </>
+                    ) : (
+                      <div className="mt-4 rounded-[var(--radius)] bg-[var(--bg-elevated)] px-6 py-8 text-center">
+                        <p className="text-sm text-[var(--muted)]">
+                          {access.reason === "subscribe" && "Subscribers only"}
+                          {access.reason === "ppv" && "Unlock to view"}
+                          {access.reason === "age_gate" && "Verify age to view"}
+                          {access.reason === "login" && "Log in to view"}
+                        </p>
+                        {access.needsPpv && post.ppvPriceCents && session?.ageVerified && (
+                          <PayButton
+                            endpoint="/api/pay/ppv"
+                            payload={{ postId: post.id }}
+                            label={`Unlock ${formatMoney(post.ppvPriceCents)}`}
+                            className="btn btn-primary btn-sm mt-4"
+                          />
+                        )}
+                        {access.reason === "subscribe" && session && (
+                          <Link
+                            href={`/u/${handle}/subscribe`}
+                            className="btn btn-primary btn-sm mt-4 inline-flex"
+                          >
+                            Subscribe
+                          </Link>
+                        )}
+                      </div>
                     )}
-                  </div>
-                  <p className="mt-3 leading-relaxed">{post.body}</p>
-                  {post.visibility === "ppv" && post.ppvPriceCents && session?.ageVerified && (
-                    <PayButton
-                      endpoint="/api/pay/ppv"
-                      payload={{ postId: post.id }}
-                      label={`Unlock ${formatMoney(post.ppvPriceCents)}`}
-                      className="btn btn-primary btn-sm mt-4"
-                    />
-                  )}
-                </article>
-              ))}
+                  </article>
+                );
+              })}
             </div>
           </section>
 

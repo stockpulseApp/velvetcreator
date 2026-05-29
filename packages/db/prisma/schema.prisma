@@ -144,6 +144,11 @@ model User {
   reportsFiled       Report[]
   platformPlans      UserPlatformPlan[]
   creatorApplication CreatorApplication?
+  blocksMade         UserBlock[]         @relation("BlocksMade")
+  blocksReceived     UserBlock[]         @relation("BlocksReceived")
+  postUnlocks        PostUnlock[]
+  comments           PostComment[]
+  notifications      Notification[]
 }
 
 model CreatorApplication {
@@ -177,6 +182,7 @@ model CreatorProfile {
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
+  @@index([approvedAt, displayFollowerCount])
   tags               CreatorTag[]
   posts              Post[]
   subscriptionTiers  SubscriptionTier[]
@@ -238,9 +244,12 @@ model Post {
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
 
-  likes Like[]
+  likes    Like[]
+  unlocks  PostUnlock[]
+  comments PostComment[]
 
   @@index([creatorProfileId, createdAt])
+  @@index([createdAt])
 }
 
 model Follow {
@@ -252,6 +261,8 @@ model Follow {
   createdAt        DateTime       @default(now())
 
   @@unique([followerId, creatorProfileId])
+  @@index([followerId])
+  @@index([creatorProfileId])
 }
 
 model Like {
@@ -319,6 +330,7 @@ model Transaction {
   dispute       Dispute?
 
   @@index([payeeCreatorId, type, createdAt])
+  @@index([payerId, type, status])
   @@index([externalId])
 }
 
@@ -345,6 +357,8 @@ model Payout {
   feeCents         Int            @default(0)
   status           String         @default("pending")
   createdAt        DateTime       @default(now())
+
+  @@index([creatorProfileId, status])
 }
 
 model Conversation {
@@ -408,6 +422,9 @@ model LiveSession {
   startedAt        DateTime?
   endedAt          DateTime?
   createdAt        DateTime          @default(now())
+
+  @@index([status, startedAt])
+  @@index([creatorProfileId, status])
 }
 
 model Listing {
@@ -443,6 +460,8 @@ model Order {
   transactionId    String?
   createdAt        DateTime    @default(now())
   updatedAt        DateTime    @updatedAt
+
+  @@index([creatorProfileId, createdAt])
 }
 
 model PlatformPlan {
@@ -500,6 +519,59 @@ model Report {
   reason     String
   status     ReportStatus @default(open)
   createdAt  DateTime     @default(now())
+
+  @@index([status, createdAt])
+}
+
+model UserBlock {
+  id        String   @id @default(cuid())
+  blockerId String
+  blocker   User     @relation("BlocksMade", fields: [blockerId], references: [id], onDelete: Cascade)
+  blockedId String
+  blocked   User     @relation("BlocksReceived", fields: [blockedId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([blockerId, blockedId])
+  @@index([blockedId])
+}
+
+model PostUnlock {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, postId])
+  @@index([userId])
+}
+
+model PostComment {
+  id        String   @id @default(cuid())
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  body      String
+  createdAt DateTime @default(now())
+
+  @@index([postId, createdAt])
+}
+
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String
+  title     String
+  body      String?
+  href      String?
+  readAt    DateTime?
+  meta      Json?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, readAt, createdAt])
 }
 
 model Dispute {

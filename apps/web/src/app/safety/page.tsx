@@ -20,7 +20,7 @@ export default function SafetyPage() {
             },
             {
               title: "Creator verification",
-              body: "Identity check before first payout. Manual review for new creator accounts.",
+              body: "Identity check before first payout. Creator review can be manual or automatic depending on platform settings.",
             },
             {
               title: "Escrow on customs",

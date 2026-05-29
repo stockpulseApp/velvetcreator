@@ -2,11 +2,16 @@ import { NextResponse } from "next/server";
 import { prisma } from "@creator/db";
 import { getSession } from "@/lib/session";
 import { canMessageCreator } from "@/lib/access";
+import { usersAreBlocked } from "@/lib/blocks";
+import { jsonError, parseJson, withRateLimit } from "@/lib/api-utils";
+import { CONVERSATION_LIST_LIMIT } from "@/lib/constants";
+
+type LoadedConv = NonNullable<Awaited<ReturnType<typeof loadConv>>>;
 
 async function participant(
   conversationId: string,
   userId: string
-): Promise<{ conv: Awaited<ReturnType<typeof loadConv>>; isCreator: boolean } | null> {
+): Promise<{ conv: LoadedConv; isCreator: boolean } | null> {
   const conv = await loadConv(conversationId);
   if (!conv) return null;
   if (conv.fanId === userId) return { conv, isCreator: false };
@@ -37,21 +42,26 @@ export async function GET() {
       messages: { orderBy: { createdAt: "desc" }, take: 1 },
     },
     orderBy: { updatedAt: "desc" },
+    take: CONVERSATION_LIST_LIMIT,
   });
 
   return NextResponse.json({ conversations });
 }
 
 export async function POST(request: Request) {
-  const session = await getSession();
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-  if (!session.ageVerified) {
-    return NextResponse.json({ error: "Age verification required" }, { status: 403 });
-  }
+  const limited = withRateLimit(`msg:${(await getSession())?.userId ?? "anon"}`, 40, 60_000);
+  if (limited) return limited;
 
-  const body = await request.json();
+  const session = await getSession();
+  if (!session) return jsonError("Unauthorized", 401);
+  if (!session.ageVerified) return jsonError("Age verification required", 403);
+
+  const body = await parseJson<{
+    body?: string;
+    conversationId?: string;
+    creatorProfileId?: string;
+  }>(request);
+  if (!body) return jsonError("Invalid JSON", 400);
   const text = typeof body.body === "string" ? body.body.trim() : "";
   if (!text) {
     return NextResponse.json({ error: "Message required" }, { status: 400 });
@@ -65,8 +75,13 @@ export async function POST(request: Request) {
     if (!part) {
       return NextResponse.json({ error: "Conversation not found" }, { status: 404 });
     }
-    conv = part.conv;
-    isCreator = part.isCreator;
+    const { conv: foundConv, isCreator: creatorSide } = part;
+    conv = foundConv;
+    isCreator = creatorSide;
+    const otherUserId = creatorSide ? foundConv.fanId : foundConv.creator.userId;
+    if (await usersAreBlocked(session.userId, otherUserId)) {
+      return jsonError("Cannot message this user", 403);
+    }
   } else if (body.creatorProfileId) {
     conv = await prisma.conversation.findUnique({
       where: {
@@ -88,15 +103,16 @@ export async function POST(request: Request) {
       });
     }
     isCreator = false;
+
+    if (await usersAreBlocked(session.userId, conv.creator.userId)) {
+      return jsonError("Cannot message this user", 403);
+    }
   } else {
-    return NextResponse.json(
-      { error: "conversationId or creatorProfileId required" },
-      { status: 400 }
-    );
+    return jsonError("conversationId or creatorProfileId required", 400);
   }
 
   if (!conv) {
-    return NextResponse.json({ error: "Conversation not found" }, { status: 404 });
+    return jsonError("Conversation not found", 404);
   }
 
   if (!isCreator) {

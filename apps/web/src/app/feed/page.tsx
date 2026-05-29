@@ -2,13 +2,15 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { prisma } from "@creator/db";
 import { getSession } from "@/lib/session";
-import { canViewPost } from "@/lib/access";
+import { batchPostAccess } from "@/lib/access";
+import { FEED_PAGE_SIZE } from "@/lib/constants";
 import { formatMoney } from "@creator/shared";
 import { AppContainer } from "@/components/layout/AppContainer";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { PayButton } from "@/components/PayButton";
 import { LikeButton } from "@/components/LikeButton";
 import { ReportButton } from "@/components/ReportButton";
+import { PostComments } from "@/components/PostComments";
 
 export default async function FeedPage() {
   const session = await getSession();
@@ -36,16 +38,19 @@ export default async function FeedPage() {
           _count: { select: { likes: true } },
         },
         orderBy: { createdAt: "desc" },
-        take: 50,
+        take: FEED_PAGE_SIZE,
       })
     : [];
 
-  const enriched = await Promise.all(
-    posts.map(async (post) => ({
-      post,
-      access: await canViewPost(session.userId, session.ageVerified, post),
-    }))
+  const accessMap = await batchPostAccess(
+    session.userId,
+    session.ageVerified,
+    posts
   );
+  const enriched = posts.map((post) => ({
+    post,
+    access: accessMap.get(post.id) ?? { allowed: false, reason: "login" },
+  }));
 
   return (
     <AppContainer>
@@ -108,6 +113,11 @@ export default async function FeedPage() {
                         Subscribe
                       </Link>
                     )}
+                  </div>
+                )}
+                {access.allowed && (
+                  <div className="px-5 pb-2">
+                    <PostComments postId={post.id} canComment />
                   </div>
                 )}
               </div>

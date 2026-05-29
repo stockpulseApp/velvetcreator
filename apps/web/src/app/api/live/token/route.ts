@@ -2,24 +2,36 @@ import { NextResponse } from "next/server";
 import { prisma } from "@creator/db";
 import { getSession } from "@/lib/session";
 import { AccessToken } from "livekit-server-sdk";
+import { hasLiveTicket } from "@/lib/live-access";
+import { jsonError, parseJson } from "@/lib/api-utils";
 
 export async function POST(request: Request) {
   const session = await getSession();
   if (!session?.ageVerified) {
-    return NextResponse.json({ error: "Age verification required" }, { status: 403 });
+    return jsonError("Age verification required", 403);
   }
 
-  const { liveSessionId } = await request.json();
-  if (!liveSessionId) {
-    return NextResponse.json({ error: "liveSessionId required" }, { status: 400 });
+  const body = await parseJson<{ liveSessionId?: string }>(request);
+  if (!body?.liveSessionId) {
+    return jsonError("liveSessionId required", 400);
   }
 
   const live = await prisma.liveSession.findUnique({
-    where: { id: liveSessionId },
+    where: { id: body.liveSessionId },
     include: { creator: true },
   });
   if (!live || live.status === "ended") {
-    return NextResponse.json({ error: "Session not found" }, { status: 404 });
+    return jsonError("Session not found", 404);
+  }
+
+  const isHost = live.creator.userId === session.userId;
+
+  if (
+    !isHost &&
+    live.ticketPriceCents > 0 &&
+    !(await hasLiveTicket(session.userId, live.id))
+  ) {
+    return jsonError("Ticket required", 402);
   }
 
   const apiKey = process.env.LIVEKIT_API_KEY;
@@ -33,13 +45,9 @@ export async function POST(request: Request) {
     );
   }
 
-  const isHost = live.creator.userId === session.userId;
-  const identity = session.userId;
-  const name = session.email.split("@")[0];
-
   const at = new AccessToken(apiKey, apiSecret, {
-    identity,
-    name,
+    identity: session.userId,
+    name: session.email.split("@")[0],
     ttl: "4h",
   });
   at.addGrant({

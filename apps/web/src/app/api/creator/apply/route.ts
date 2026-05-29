@@ -33,13 +33,15 @@ export async function POST(request: Request) {
     data: { role: "creator" },
   });
 
+  const autoApprove = process.env.AUTO_APPROVE_CREATORS !== "false";
+
   const profile = await prisma.creatorProfile.create({
     data: {
       userId: session.userId,
       handle: cleanHandle,
       bio,
       headline,
-      approvedAt: new Date(),
+      approvedAt: autoApprove ? new Date() : null,
       promoEndsAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
       tags: tags.length
         ? { create: tags.map((tag) => ({ tag })) }
@@ -59,8 +61,17 @@ export async function POST(request: Request) {
 
   await prisma.creatorApplication.upsert({
     where: { userId: session.userId },
-    create: { userId: session.userId, bio, status: "approved" },
-    update: { bio, status: "approved" },
+    create: {
+      userId: session.userId,
+      bio,
+      status: autoApprove ? "approved" : "pending",
+      reviewedAt: autoApprove ? new Date() : null,
+    },
+    update: {
+      bio,
+      status: autoApprove ? "approved" : "pending",
+      reviewedAt: autoApprove ? new Date() : null,
+    },
   });
 
   return NextResponse.json({ ok: true, handle: cleanHandle });

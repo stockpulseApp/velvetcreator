@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { SessionPayload } from "@/lib/session";
+import { NotificationBell } from "@/components/NotificationBell";
 
 type Props = {
   session: SessionPayload | null;
@@ -33,8 +34,12 @@ export function SiteHeader({ session }: Props) {
           <Link href="/for-creators" className="btn btn-ghost btn-sm">
             For creators
           </Link>
+          <Link href="/community" className="btn btn-ghost btn-sm">
+            Community
+          </Link>
           {session ? (
             <>
+              <NotificationBell />
               <Link href="/feed" className="btn btn-ghost btn-sm">
                 Feed
               </Link>

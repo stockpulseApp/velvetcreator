@@ -6,6 +6,7 @@ import { formatMoney } from "@creator/shared";
 import { PayButton } from "@/components/PayButton";
 import { LiveViewer } from "@/components/LiveViewer";
 import { AppContainer } from "@/components/layout/AppContainer";
+import { hasLiveTicket } from "@/lib/live-access";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -18,6 +19,12 @@ export default async function LivePage({ params }: Props) {
     include: { creator: true },
   });
   if (!live) notFound();
+
+  const isHost = session?.userId === live.creator.userId;
+  const canJoin =
+    isHost ||
+    live.ticketPriceCents === 0 ||
+    (session ? await hasLiveTicket(session.userId, live.id) : false);
 
   const isLive = live.status === "live" || live.status === "scheduled";
 
@@ -62,19 +69,26 @@ export default async function LivePage({ params }: Props) {
           </div>
         ) : session?.ageVerified ? (
           <div className="space-y-4">
-            {live.ticketPriceCents > 0 && (
-              <PayButton
-                endpoint="/api/pay/live"
-                payload={{ liveSessionId: live.id }}
-                label={`Join for ${formatMoney(live.ticketPriceCents)}`}
-                className="btn btn-primary"
-              />
+            {live.ticketPriceCents > 0 && !canJoin && !isHost && (
+              <div className="card border-[var(--rose)]/30">
+                <p className="text-sm text-[var(--text-secondary)]">
+                  Purchase a ticket to join this room. Your payment is recorded before
+                  streaming access is granted.
+                </p>
+                <PayButton
+                  endpoint="/api/pay/live"
+                  payload={{ liveSessionId: live.id }}
+                  label={`Get ticket · ${formatMoney(live.ticketPriceCents)}`}
+                  className="btn btn-primary mt-4"
+                />
+              </div>
             )}
             <LiveViewer
               liveSessionId={live.id}
               roomName={live.roomName}
               title={live.title}
-              isHost={session?.userId === live.creator.userId}
+              isHost={isHost}
+              canJoin={canJoin}
             />
           </div>
         ) : (

@@ -5,6 +5,7 @@ import { MessageThread } from "@/components/MessageThread";
 import { NewMessageComposer } from "@/components/NewMessageComposer";
 import { AppContainer } from "@/components/layout/AppContainer";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { CONVERSATION_LIST_LIMIT, MESSAGE_PAGE_SIZE } from "@/lib/constants";
 
 type Props = { searchParams: Promise<{ conversation?: string; creator?: string }> };
 
@@ -26,6 +27,7 @@ export default async function MessagesPage({ searchParams }: Props) {
       messages: { orderBy: { createdAt: "desc" }, take: 1 },
     },
     orderBy: { updatedAt: "desc" },
+    take: CONVERSATION_LIST_LIMIT,
   });
 
   let active = conversationId
@@ -34,7 +36,10 @@ export default async function MessagesPage({ searchParams }: Props) {
         include: {
           creator: true,
           fan: { select: { displayName: true, id: true } },
-          messages: { orderBy: { createdAt: "asc" } },
+          messages: {
+            orderBy: { createdAt: "desc" },
+            take: MESSAGE_PAGE_SIZE,
+          },
         },
       })
     : null;
@@ -50,7 +55,10 @@ export default async function MessagesPage({ searchParams }: Props) {
       include: {
         creator: true,
         fan: { select: { displayName: true, id: true } },
-        messages: { orderBy: { createdAt: "asc" } },
+        messages: {
+          orderBy: { createdAt: "desc" },
+          take: MESSAGE_PAGE_SIZE,
+        },
       },
     });
   }
@@ -139,12 +147,14 @@ export default async function MessagesPage({ searchParams }: Props) {
                 unlocked={
                   !!active.unlockedAt || active.creator.userId === session.userId
                 }
-                initialMessages={active.messages.map((m) => ({
-                  id: m.id,
-                  body: m.body,
-                  senderId: m.senderId,
-                  createdAt: m.createdAt.toISOString(),
-                }))}
+                initialMessages={[...active.messages]
+                  .reverse()
+                  .map((m) => ({
+                    id: m.id,
+                    body: m.body,
+                    senderId: m.senderId,
+                    createdAt: m.createdAt.toISOString(),
+                  }))}
               />
             </>
           ) : composeTarget ? (

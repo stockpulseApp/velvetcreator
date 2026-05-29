@@ -128,6 +128,24 @@ export default async function HomePage() {
 
       <CreatorShowcase />
 
+      <section className="border-y border-[var(--border)] py-16 md:py-20">
+        <div className="container-wide text-center">
+          <h2 className="font-display text-3xl font-semibold">Build with the community</h2>
+          <p className="mx-auto mt-4 max-w-2xl text-[var(--text-secondary)]">
+            Follow creators, comment on public teasers, get notified when someone engages
+            with your work — a real home for fetish niches, not a ghost town.
+          </p>
+          <div className="mt-8 flex flex-wrap justify-center gap-4">
+            <Link href="/community" className="btn btn-primary">
+              Explore community
+            </Link>
+            <Link href="/explore" className="btn btn-secondary">
+              Discover creators
+            </Link>
+          </div>
+        </div>
+      </section>
+
       <section className="py-20 md:py-28">
         <div className="container-wide">
           <div className="grid items-center gap-12 lg:grid-cols-2">
