@@ -2,6 +2,7 @@ import { prisma } from "@creator/db";
 import { getSession } from "@/lib/session";
 import { formatMoney } from "@creator/shared";
 import { StudioLayout } from "@/components/layout/StudioLayout";
+import { TierForm } from "@/components/TierForm";
 
 export default async function StudioTiersPage() {
   const session = await getSession();
@@ -16,6 +17,7 @@ export default async function StudioTiersPage() {
       title="Subscription tiers"
       subtitle="Fan memberships with perks — lower platform take than generic OF clones"
     >
+      <TierForm />
       <div className="space-y-3">
         {profile.subscriptionTiers.map((t) => (
           <div key={t.id} className="card flex flex-wrap justify-between gap-4">

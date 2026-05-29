@@ -5,6 +5,7 @@ import { getSession } from "@/lib/session";
 import { getCreatorBalance } from "@/lib/transactions";
 import { formatMoney } from "@creator/shared";
 import { GoLiveForm } from "@/components/GoLiveForm";
+import { CreatePostForm } from "@/components/CreatePostForm";
 import { AppContainer } from "@/components/layout/AppContainer";
 import { PageHeader } from "@/components/layout/PageHeader";
 
@@ -78,6 +79,14 @@ export default async function StudioPage() {
           Promote
         </Link>
       </nav>
+
+      <div className="card">
+        <h2 className="font-semibold">Publish</h2>
+        <p className="mt-1 mb-4 text-sm text-[var(--muted)]">
+          Teasers, subscriber posts, or PPV drops
+        </p>
+        <CreatePostForm />
+      </div>
 
       <div className="card">
         <h2 className="font-semibold">Go live</h2>

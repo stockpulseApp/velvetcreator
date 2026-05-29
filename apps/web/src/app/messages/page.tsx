@@ -2,6 +2,7 @@ import Link from "next/link";
 import { prisma } from "@creator/db";
 import { getSession } from "@/lib/session";
 import { MessageThread } from "@/components/MessageThread";
+import { NewMessageComposer } from "@/components/NewMessageComposer";
 import { AppContainer } from "@/components/layout/AppContainer";
 import { PageHeader } from "@/components/layout/PageHeader";
 
@@ -60,6 +61,15 @@ export default async function MessagesPage({ searchParams }: Props) {
 
   const isCreatorInActive =
     canViewActive && active!.creator.userId === userId;
+
+  let composeTarget: { id: string; handle: string } | null = null;
+  if (!canViewActive && legacyCreatorId) {
+    const target = await prisma.creatorProfile.findUnique({
+      where: { id: legacyCreatorId },
+      select: { id: true, handle: true },
+    });
+    if (target) composeTarget = target;
+  }
 
   function threadLabel(c: (typeof conversations)[0]) {
     const iAmCreator = c.creator.userId === userId;
@@ -137,6 +147,11 @@ export default async function MessagesPage({ searchParams }: Props) {
                 }))}
               />
             </>
+          ) : composeTarget ? (
+            <NewMessageComposer
+              creatorProfileId={composeTarget.id}
+              creatorHandle={composeTarget.handle}
+            />
           ) : (
             <div className="card flex min-h-[400px] flex-col items-center justify-center text-center">
               <p className="font-display text-xl text-[var(--accent-bright)]">

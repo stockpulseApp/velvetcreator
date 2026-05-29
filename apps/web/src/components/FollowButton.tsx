@@ -2,8 +2,14 @@
 
 import { useState } from "react";
 
-export function FollowButton({ creatorProfileId }: { creatorProfileId: string }) {
-  const [following, setFollowing] = useState(false);
+export function FollowButton({
+  creatorProfileId,
+  initialFollowing = false,
+}: {
+  creatorProfileId: string;
+  initialFollowing?: boolean;
+}) {
+  const [following, setFollowing] = useState(initialFollowing);
 
   async function toggle() {
     if (following) {

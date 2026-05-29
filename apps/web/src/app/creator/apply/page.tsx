@@ -3,10 +3,12 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { AuthShell } from "@/components/auth/AuthShell";
+import { TagPicker } from "@/components/editorial/TagPicker";
 
 export default function CreatorApplyPage() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
+  const [tags, setTags] = useState<string[]>([]);
 
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -18,6 +20,7 @@ export default function CreatorApplyPage() {
         handle: fd.get("handle"),
         bio: fd.get("bio"),
         headline: fd.get("headline"),
+        tags,
       }),
     });
     const data = await res.json();
@@ -70,6 +73,7 @@ export default function CreatorApplyPage() {
             required
           />
         </div>
+        <TagPicker selected={tags} onChange={setTags} />
         {error && <p className="text-sm text-[var(--danger)]">{error}</p>}
         <button type="submit" className="btn btn-primary w-full">
           Submit application

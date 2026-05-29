@@ -45,8 +45,13 @@ export default function VerifyAgePage() {
 
       setProgress("Age verified — welcome in.");
       setStep("done");
-      setTimeout(() => {
-        router.push("/feed");
+      setTimeout(async () => {
+        const me = await fetch("/api/me").then((r) => r.json()).catch(() => null);
+        if (me?.role === "creator" && !me?.hasCreatorProfile) {
+          router.push("/creator/apply");
+        } else {
+          router.push("/feed");
+        }
         router.refresh();
       }, 800);
     } catch {

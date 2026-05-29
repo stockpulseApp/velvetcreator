@@ -22,7 +22,13 @@ export function MobileNav({ role }: { role: UserRole }) {
   const pathname = usePathname();
   const items =
     role === "creator" || role === "admin"
-      ? [...fanItems.slice(0, 3), { href: "/studio", label: "Studio", icon: "★" }]
+      ? [
+          fanItems[0],
+          fanItems[1],
+          fanItems[2],
+          { href: "/studio", label: "Studio", icon: "★" },
+          fanItems[3],
+        ]
       : fanItems;
 
   return (

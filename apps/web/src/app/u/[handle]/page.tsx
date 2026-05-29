@@ -9,6 +9,7 @@ import { FollowButton } from "@/components/FollowButton";
 import { TipForm } from "@/components/TipForm";
 import { CustomRequestForm } from "@/components/CustomRequestForm";
 import { DemoBadge } from "@/components/editorial/DemoBadge";
+import { ReportButton } from "@/components/ReportButton";
 
 type Props = { params: Promise<{ handle: string }> };
 
@@ -37,6 +38,7 @@ export default async function CreatorProfilePage({ params }: Props) {
     creator.displayFollowerCount ?? creator._count.follows;
 
   let messageHref = `/messages?creator=${creator.id}`;
+  let isFollowing = false;
   if (session) {
     const existing = await prisma.conversation.findUnique({
       where: {
@@ -48,6 +50,16 @@ export default async function CreatorProfilePage({ params }: Props) {
       select: { id: true },
     });
     if (existing) messageHref = `/messages?conversation=${existing.id}`;
+
+    const follow = await prisma.follow.findUnique({
+      where: {
+        followerId_creatorProfileId: {
+          followerId: session.userId,
+          creatorProfileId: creator.id,
+        },
+      },
+    });
+    isFollowing = !!follow;
   }
 
   return (
@@ -91,13 +103,20 @@ export default async function CreatorProfilePage({ params }: Props) {
             </div>
             {session && (
               <div className="flex flex-wrap gap-2">
-                <FollowButton creatorProfileId={creator.id} />
+                <FollowButton
+                  creatorProfileId={creator.id}
+                  initialFollowing={isFollowing}
+                />
                 <Link href={`/u/${handle}/subscribe`} className="btn btn-primary">
                   Subscribe
                 </Link>
                 <Link href={messageHref} className="btn btn-secondary">
                   Message
                 </Link>
+                <ReportButton
+                  targetType="creator"
+                  targetId={creator.id}
+                />
               </div>
             )}
           </div>
@@ -129,11 +148,20 @@ export default async function CreatorProfilePage({ params }: Props) {
             <div className="mt-4 space-y-4">
               {creator.posts.map((post) => (
                 <article key={post.id} className="card">
-                  <div className="flex items-center gap-2">
-                    <span className="badge badge-muted">{post.visibility}</span>
-                    <time className="text-xs text-[var(--muted)]">
-                      {new Date(post.createdAt).toLocaleDateString()}
-                    </time>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="badge badge-muted">{post.visibility}</span>
+                      <time className="text-xs text-[var(--muted)]">
+                        {new Date(post.createdAt).toLocaleDateString()}
+                      </time>
+                    </div>
+                    {session && (
+                      <ReportButton
+                        targetType="post"
+                        targetId={post.id}
+                        label="Report"
+                      />
+                    )}
                   </div>
                   <p className="mt-3 leading-relaxed">{post.body}</p>
                   {post.visibility === "ppv" && post.ppvPriceCents && session?.ageVerified && (

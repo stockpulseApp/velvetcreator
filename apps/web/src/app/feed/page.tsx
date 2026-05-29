@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { prisma } from "@creator/db";
 import { getSession } from "@/lib/session";
 import { canViewPost } from "@/lib/access";
@@ -7,10 +8,19 @@ import { AppContainer } from "@/components/layout/AppContainer";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { PayButton } from "@/components/PayButton";
 import { LikeButton } from "@/components/LikeButton";
+import { ReportButton } from "@/components/ReportButton";
 
 export default async function FeedPage() {
   const session = await getSession();
   if (!session) return null;
+
+  if (session.role === "creator") {
+    const ownProfile = await prisma.creatorProfile.findUnique({
+      where: { userId: session.userId },
+      select: { id: true },
+    });
+    if (!ownProfile) redirect("/creator/apply");
+  }
 
   const follows = await prisma.follow.findMany({
     where: { followerId: session.userId },
@@ -101,9 +111,12 @@ export default async function FeedPage() {
                   </div>
                 )}
               </div>
-              <div className="flex items-center gap-4 border-t border-[var(--border)] px-5 py-3 text-sm text-[var(--muted)]">
-                <LikeButton postId={post.id} count={post._count.likes} />
-                <span>{new Date(post.createdAt).toLocaleDateString()}</span>
+              <div className="flex items-center justify-between gap-4 border-t border-[var(--border)] px-5 py-3 text-sm text-[var(--muted)]">
+                <div className="flex items-center gap-4">
+                  <LikeButton postId={post.id} count={post._count.likes} />
+                  <span>{new Date(post.createdAt).toLocaleDateString()}</span>
+                </div>
+                <ReportButton targetType="post" targetId={post.id} label="Report" />
               </div>
             </article>
           ))}

@@ -8,7 +8,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { handle, bio, headline } = await request.json();
+  const { handle, bio, headline, tags: rawTags } = await request.json();
+  const tags = Array.isArray(rawTags)
+    ? rawTags.map((t) => String(t).toLowerCase().slice(0, 32)).slice(0, 8)
+    : [];
   const cleanHandle = String(handle)
     .toLowerCase()
     .replace(/[^a-z0-9_]/g, "")
@@ -30,20 +33,34 @@ export async function POST(request: Request) {
     data: { role: "creator" },
   });
 
-  await prisma.creatorProfile.create({
+  const profile = await prisma.creatorProfile.create({
     data: {
       userId: session.userId,
       handle: cleanHandle,
       bio,
       headline,
+      approvedAt: new Date(),
       promoEndsAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
+      tags: tags.length
+        ? { create: tags.map((tag) => ({ tag })) }
+        : undefined,
+    },
+  });
+
+  await prisma.subscriptionTier.create({
+    data: {
+      creatorProfileId: profile.id,
+      name: "Bronze",
+      priceCents: 999,
+      sortOrder: 0,
+      perks: { feed: true, dmQuota: 5 },
     },
   });
 
   await prisma.creatorApplication.upsert({
     where: { userId: session.userId },
-    create: { userId: session.userId, bio, status: "pending" },
-    update: { bio, status: "pending" },
+    create: { userId: session.userId, bio, status: "approved" },
+    update: { bio, status: "approved" },
   });
 
   return NextResponse.json({ ok: true, handle: cleanHandle });
