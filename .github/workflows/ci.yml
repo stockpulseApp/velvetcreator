@@ -43,3 +43,8 @@ jobs:
       - run: npm run db:push
       - run: npm run build
       - run: npm run lint
+      - name: Smoke production
+        if: github.ref == 'refs/heads/master'
+        run: npm run smoke:prod
+        env:
+          PRODUCTION_URL: https://creator-platform-eight-pi.vercel.app

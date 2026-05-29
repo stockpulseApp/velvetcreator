@@ -45,7 +45,10 @@ export default function ForCreatorsPage() {
           <Link href="/signup?role=creator" className="btn btn-primary">
             Apply to create
           </Link>
-          <Link href="/creator/apply" className="btn btn-secondary">
+          <Link href="/fetishes" className="btn btn-secondary">
+            Browse fetish tags
+          </Link>
+          <Link href="/creator/apply" className="btn btn-ghost">
             I already have an account
           </Link>
         </div>

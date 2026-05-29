@@ -61,6 +61,14 @@ export default async function AdminPage() {
         <h2 className="font-display text-lg text-[var(--accent-bright)]">
           Launch waitlist ({waitlist.length} shown)
         </h2>
+        <p className="mt-2 text-sm text-[var(--muted)]">
+          <a
+            href="/api/admin/waitlist-export"
+            className="text-[var(--accent-bright)] underline"
+          >
+            Download CSV
+          </a>
+        </p>
         <ul className="mt-4 max-h-64 space-y-2 overflow-y-auto text-sm">
           {waitlist.map((w) => (
             <li

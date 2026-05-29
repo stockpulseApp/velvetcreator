@@ -29,6 +29,8 @@ npm install
 npm run db:generate
 npm run db:push
 npm run db:seed
+npm run smoke:prod    # hit production URLs
+npm run db:check      # Neon record counts (needs DATABASE_URL)
 ```
 
 4. **Run**:
@@ -69,7 +71,7 @@ Production: integrate CCBill/Segpay per [docs/PAYMENTS.md](docs/PAYMENTS.md).
 - Automated 18+ verification at `/verify-age` (ID upload + DOB)
 - Set `NEXT_PUBLIC_APP_URL` to your production domain before deploy
 
-See [docs/LAUNCH_CHECKLIST.md](docs/LAUNCH_CHECKLIST.md) and [docs/DEPLOY.md](docs/DEPLOY.md).
+See [docs/LAUNCH_CHECKLIST.md](docs/LAUNCH_CHECKLIST.md), [docs/DEPLOY.md](docs/DEPLOY.md), and [docs/OPERATIONS.md](docs/OPERATIONS.md).
 
 ## Deploy
 

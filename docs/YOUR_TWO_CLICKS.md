@@ -1,14 +1,10 @@
-# Two steps only you can complete (≈2 minutes)
+# Remaining manual step: DNS only
 
-Everything else is deployed. Finish these so the custom domain and database are permanent.
+Neon database is connected and seeded. Production runs on Vercel.
 
-## 1. Claim your Neon database (before 31 May 2026)
+## Custom domain (Bluehost)
 
-Open: **https://neon.new/claim/e8074136-b0c3-41e6-82f8-d4b57a96b16a**
-
-Sign in with Google or GitHub. Click claim. Without this, the production database may be deleted.
-
-## 2. Bluehost DNS for custom URL
+`velvetcreator.wealthybrainiac.com` does **not** resolve yet (no DNS record).
 
 In **Bluehost → wealthybrainiac.com → DNS** add:
 
@@ -16,12 +12,17 @@ In **Bluehost → wealthybrainiac.com → DNS** add:
 |------|------|-------|
 | A | `velvetcreator` | `76.76.21.21` |
 
-Then wait ~15 minutes. Your app will be at:
+After propagation (~15–60 min), run:
 
-**https://velvetcreator.wealthybrainiac.com**
+```bash
+PRODUCTION_URL=https://velvetcreator.wealthybrainiac.com npm run smoke:prod
+npx vercel env rm NEXT_PUBLIC_APP_URL production --yes
+printf '%s' 'https://velvetcreator.wealthybrainiac.com' | npx vercel env add NEXT_PUBLIC_APP_URL production
+npx vercel --prod
+```
 
-(Vercel project already configured; `NEXT_PUBLIC_APP_URL` already set.)
+Until then the live app is:
 
----
+**https://creator-platform-eight-pi.vercel.app**
 
-Until DNS propagates, use: https://creator-platform-eight-pi.vercel.app
+See [OPERATIONS.md](./OPERATIONS.md) for runbook.
